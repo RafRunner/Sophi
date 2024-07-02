@@ -94,9 +94,7 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
         stream.pipe(writeStream);
 
         await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-            stream.on('error', (error) => {
+            const handleError = (error) => {
                 logger.error(
                     `Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`,
                     error
@@ -104,7 +102,10 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
                 reject(error);
                 stream.unpipe();
                 writeStream.close();
-            });
+            };
+            writeStream.on('finish', resolve);
+            writeStream.on('error', handleError);
+            stream.on('error', handleError);
         });
 
         const joinOptions = {
@@ -144,10 +145,7 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             errorProcessed = true;
             serverPlayer.audioPlayer.removeAllListeners();
 
-            logger.warn(
-                `Erro em audioplayer música "${selectedSong.title}" server ${serverPlayer.guildId}.`,
-                error
-            );
+            logger.warn(`Erro em audioplayer música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
             playlistEntry.reties++;
 
             if (serverPlayer.skipToSong()) {
