@@ -1,8 +1,8 @@
-const version = require('./package.json').version;
+const version = require('../../package.json').version;
 const Command = require('../domain/Command');
 const { messageIsCommand } = require('../util/commandUtil');
 
-const version = new Command(
+const versionCommand = new Command(
     (_message, normalizedMessage) => {
         return messageIsCommand(normalizedMessage, ['version', 'v']);
     },
@@ -14,4 +14,4 @@ const version = new Command(
     false
 );
 
-module.exports = version;
+module.exports = versionCommand;
