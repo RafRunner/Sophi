@@ -2,7 +2,7 @@
 const Command = require("../domain/Command");
 const { messageIsCommand } = require('../util/commandUtil');
 
-const skip = new Command(
+const clear = new Command(
     (_message, normalizedMessage) => {
         return messageIsCommand(normalizedMessage, ['clear', 'c', 'stop']);
     },
@@ -13,4 +13,4 @@ const skip = new Command(
     }
 );
 
-module.exports = skip;
+module.exports = clear;

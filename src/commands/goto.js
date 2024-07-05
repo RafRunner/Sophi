@@ -4,7 +4,7 @@ const Command = require('../domain/Command');
 const { messageStartsWithCommand } = require('../util/commandUtil');
 const { resolveIndex, getIndexRegex } = require('../util/indexUtil');
 
-const skip = new Command(
+const goto = new Command(
     (_message, normalizedMessage) => {
         return messageStartsWithCommand(normalizedMessage, ['goto', 'go']);
     },
@@ -24,4 +24,4 @@ const skip = new Command(
     }
 );
 
-module.exports = skip;
+module.exports = goto;
