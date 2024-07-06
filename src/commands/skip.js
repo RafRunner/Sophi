@@ -1,5 +1,6 @@
 const radin = require('../botfunctions/player');
 const Command = require('../domain/Command');
+const CommandHelp = require('../domain/CommandHelp');
 const { messageIsCommand } = require('../util/commandUtil');
 
 const skip = new Command(
@@ -17,7 +18,9 @@ const skip = new Command(
         }
 
         message.channel.send('Skiiiiiiiiiipooooo-desu vruuuuuuuuuuuuuuuuuuuuuuuuuuum!!!!');
-    }
+    },
+
+    new CommandHelp('skip', 's', 'pula o que estiver tocando para o próximo da playlist')
 );
 
 module.exports = skip;

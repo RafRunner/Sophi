@@ -1,6 +1,7 @@
 const { AudioPlayerStatus } = require('@discordjs/voice');
 const Command = require('../domain/Command');
 const { messageIsCommand } = require('../util/commandUtil');
+const CommandHelp = require('../domain/CommandHelp');
 
 const pause = new Command(
     (_message, normalizedMessage) => {
@@ -27,7 +28,9 @@ const pause = new Command(
                 audioPlayer.stop();
             }, 60 * 60 * 1000); // One hour
         }
-    }
+    },
+
+    new CommandHelp('pause', 'play, p', 'pausa (ou despausa) o bot')
 );
 
 module.exports = pause;

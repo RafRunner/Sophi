@@ -2,6 +2,7 @@
 const Command = require('../domain/Command');
 const { resolveIndex, getTwoIndexesRegex } = require('../util/indexUtil');
 const { messageStartsWithCommand } = require('../util/commandUtil');
+const CommandHelp = require('../domain/CommandHelp');
 
 const move = new Command(
     (_message, normalizedMessage) => {
@@ -23,7 +24,9 @@ const move = new Command(
 
         serverPlayer.move(from, to);
         message.channel.send(`Música "${playlist[to].ytInfo.title}" trocada com "${playlist[from].ytInfo.title}" uwu`);
-    }
+    },
+
+    new CommandHelp('move', 'mv', 'Troca de lugar dois itens da playlist. Aceita 2 indexes')
 );
 
 module.exports = move;

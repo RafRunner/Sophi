@@ -4,6 +4,7 @@ const { messageStartsWithCommand } = require('../util/commandUtil');
 const { resolveIndex, getIndexRegex } = require('../util/indexUtil');
 const { searchTrack } = require('../botfunctions/searchTrack');
 const playOrAddToPlaylist = require('../botfunctions/playOrAddToPlaylist');
+const CommandHelp = require('../domain/CommandHelp');
 
 const play = new Command(
     (_message, normalizedMessage) => {
@@ -19,7 +20,9 @@ const play = new Command(
         }
 
         await playOrAddToPlaylist(message, serverPlayer, ytInfos);
-    }
+    },
+
+    new CommandHelp('play', 'p', 'adiciona um pedido na playlist')
 );
 
 const playNext = new Command(
@@ -36,7 +39,9 @@ const playNext = new Command(
         }
 
         await playOrAddToPlaylist(message, serverPlayer, ytInfos, true);
-    }
+    },
+
+    new CommandHelp('playnext', 'pn', 'adiciona um pedido na playlist como o próximo')
 );
 
 const playAgain = new Command(
@@ -56,7 +61,13 @@ const playAgain = new Command(
         const playlistEntry = serverPlayer.playlist[index];
 
         await playOrAddToPlaylist(message, serverPlayer, [playlistEntry.ytInfo]);
-    }
+    },
+
+    new CommandHelp(
+        'playagain',
+        'pa',
+        'adiciona um pedido que já está na playlist novamente na playlist. Aceita um index'
+    )
 );
 
 module.exports = { play, playNext, playAgain };

@@ -2,10 +2,11 @@
 const Command = require('../domain/Command');
 const { resolveIndex, getIndexRegex } = require('../util/indexUtil');
 const { messageStartsWithCommand } = require('../util/commandUtil');
+const CommandHelp = require('../domain/CommandHelp');
 
 const remove = new Command(
-    (message, normalizedMessage) => {
-        return messageStartsWithCommand(normalizedMessage, ['remove', 'r', 'rm']);
+    (_message, normalizedMessage) => {
+        return messageStartsWithCommand(normalizedMessage, ['remove', 'rm']);
     },
 
     async (message, argument, serverPlayer) => {
@@ -19,7 +20,9 @@ const remove = new Command(
         const removedEntry = serverPlayer.removeFromPlaylist(index);
 
         message.channel.send(`Música ${removedEntry.ytInfo.title} removida OwO`);
-    }
+    },
+
+    new CommandHelp('remove', 'rm', 'remove um item playlist. Aceita um index')
 );
 
 module.exports = remove;

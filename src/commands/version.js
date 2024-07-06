@@ -11,6 +11,7 @@ const versionCommand = new Command(
         message.reply(`Versão ${version}`);
     },
 
+    null,
     false
 );
 

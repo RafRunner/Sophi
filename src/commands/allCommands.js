@@ -10,12 +10,13 @@ const shuffle = require('./shuffle');
 const playHere = require('./playHere');
 const { search, searchNext } = require('./searchSong');
 const version = require('./version');
+const helpMaker = require('./help');
 
 const allCommands = [
-    pause,
     play,
     playNext,
     playAgain,
+    pause,
     skip,
     queue,
     move,
@@ -28,5 +29,9 @@ const allCommands = [
     playHere,
     version,
 ];
+
+const help = helpMaker(allCommands);
+
+allCommands.push(help);
 
 module.exports = allCommands;

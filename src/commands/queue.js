@@ -2,6 +2,7 @@ const Command = require('../domain/Command');
 const ServerPlayer = require('../domain/ServerPlayer');
 const { EmbedBuilder, MessageReaction, User } = require('discord.js');
 const { messageIsCommand } = require('../util/commandUtil');
+const CommandHelp = require('../domain/CommandHelp');
 
 const queue = new Command(
     (_message, normalizedMessage) => {
@@ -89,7 +90,9 @@ const queue = new Command(
 
         collector.on('collect', changePage);
         collector.on('remove', changePage);
-    }
+    },
+
+    new CommandHelp('queue', 'q', 'mostra os itens da playlist de forma interativa')
 );
 
 /**

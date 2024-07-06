@@ -6,6 +6,7 @@ const { messageStartsWithCommand } = require('../util/commandUtil');
 const { EmbedBuilder, MessageCollector, Message } = require('discord.js');
 const playOrAddToPlaylist = require('../botfunctions/playOrAddToPlaylist');
 const ServerPlayer = require('../domain/ServerPlayer');
+const CommandHelp = require('../domain/CommandHelp');
 
 const search = new Command(
     (_message, normalizedMessage) => {
@@ -14,17 +15,25 @@ const search = new Command(
 
     async (message, argument, serverPlayer) => {
         await searchSong(message, argument, serverPlayer, false);
-    }
+    },
+
+    new CommandHelp('search', 'find, f', 'procura um termo e oferece opções a serem adicionadas na playlist')
 );
 
 const searchNext = new Command(
     (_message, normalizedMessage) => {
-        return messageStartsWithCommand(normalizedMessage, ['searchNext', 'findNext', 'fn']);
+        return messageStartsWithCommand(normalizedMessage, ['searchnext', 'findnext', 'fn']);
     },
 
     async (message, argument, serverPlayer) => {
         await searchSong(message, argument, serverPlayer, true);
-    }
+    },
+
+    new CommandHelp(
+        'searchnext',
+        'findnext, fn',
+        'procura um termo e oferece opções a serem adicionadas na playlist como a próxima'
+    )
 );
 
 /**

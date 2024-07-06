@@ -1,6 +1,7 @@
-const { joinVoiceChannel, AudioPlayerStatus } = require("@discordjs/voice");
-const Command = require("../domain/Command");
+const { joinVoiceChannel, AudioPlayerStatus } = require('@discordjs/voice');
+const Command = require('../domain/Command');
 const { messageIsCommand } = require('../util/commandUtil');
+const CommandHelp = require('../domain/CommandHelp');
 
 const playHere = new Command(
     (_message, normalizedMessage) => {
@@ -9,7 +10,7 @@ const playHere = new Command(
 
     async (message, _argument, serverPlayer) => {
         if (serverPlayer.notPlayingOrPaused()) {
-            message.reply(`Não tem nada todando ou pausado! Use o comando play(p) ewe`)
+            message.reply(`Não tem nada todando ou pausado! Use o comando play(p) ewe`);
             return;
         }
 
@@ -29,7 +30,9 @@ const playHere = new Command(
         }
 
         message.reply('Movi OwO');
-    }
+    },
+
+    new CommandHelp('playHere', 'here, ph', 'faz o bot trocar para o canal de voz do usuário usando o comando')
 );
 
 module.exports = playHere;
