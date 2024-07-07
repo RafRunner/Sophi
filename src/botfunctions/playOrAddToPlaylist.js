@@ -30,13 +30,11 @@ async function playOrAddToPlaylist(message, serverPlayer, ytInfos, asNext = fals
     const trimed = trimPlaylist(serverPlayer, filteredInfos, limit);
 
     if (trimed) {
-        message.reply(
-            filteredInfos.length === 0
-                ? `A playlist já está cheia! O tamanho máximo é de ${limit} @w@`
-                : `A playlist está bem grande! Limitei seu pedido a ${filteredInfos.length} música(s) @w@`
-        );
         if (filteredInfos.length === 0) {
+            message.reply(`A playlist já está cheia! O tamanho máximo é de ${limit} @w@`);
             return;
+        } else {
+            message.reply(`A playlist está bem grande! Limitei seu pedido a ${filteredInfos.length} música(s) @w@`);
         }
     }
     const playlistHasEnded = serverPlayer.playlistHasEnded();

@@ -1,7 +1,5 @@
 const playdl = require('play-dl');
-const ytdl = require('ytdl-core');
 const { getSpotifyClient } = require('../util/clientManager');
-const { formatDuration } = require('../util/formatUtil');
 const logger = require('../util/logger');
 
 const playlistLimit = 100;
@@ -16,7 +14,7 @@ async function searchTrack(searchTerm) {
         if (/^(spotify:|https:\/\/[a-z]+\.spotify\.com\/)/.test(searchTerm)) {
             return searchSpotify(searchTerm);
         }
-        if (playdl.yt_validate(searchTerm) === false && !ytdl.validateURL(searchTerm)) {
+        if (!playdl.yt_validate(searchTerm)) {
             return [null, 'Infelizmente só consigo reproduzir links do YouTube ou Spotify a'];
         }
 
@@ -146,28 +144,16 @@ async function searchSpotifyTrack(track) {
 
 /**
  *
- * @param {string} searchTerm
+ * @param {string} searchTerm Must be a YouTube link
  * @returns {Promise<[playdl.YouTubeVideo[], string]>}
  */
 async function searchYoutubeLink(searchTerm) {
     try {
         searchTerm = searchTerm.replace(/&.+$/gi, '');
 
-        const basicInfo = await ytdl.getBasicInfo(searchTerm);
-        const durationInSec = Number.parseInt(basicInfo.videoDetails.lengthSeconds);
+        const ytInfo = await playdl.video_basic_info(searchTerm);
 
-        const ytInfo = {
-            id: basicInfo.uid,
-            title: basicInfo.videoDetails.title,
-            url: searchTerm,
-            channel: {
-                name: basicInfo.videoDetails.author.name,
-            },
-            durationInSec,
-            durationRaw: formatDuration(durationInSec),
-        };
-
-        return [[ytInfo], null];
+        return [[ytInfo.video_details], null];
     } catch (e) {
         logger.error(`Erro ao buscar informação da música "${searchTerm}"`, e);
         return [
