@@ -1,6 +1,6 @@
-const ytdl = require('ytdl-core');
-const fs = require('fs');
-const path = require('path');
+const ytstream = require('yt-stream');
+// const fs = require('fs');
+// const path = require('path');
 const {
     joinVoiceChannel,
     createAudioResource,
@@ -79,38 +79,43 @@ function goToNextSong(serverPlayer) {
  * @returns {Promise<boolean>}
  */
 async function playReq(serverPlayer, playlistEntry, sendMessage) {
-    const { message, ytInfo: selectedSong, originalVoiceChannelId: channelId } = playlistEntry;
+    const { message, ytInfo: selectedSong, originalVoiceChannelId } = playlistEntry;
 
     try {
-        const filePath = path.resolve(__dirname, '..', '..', 'audio_cache', `${serverPlayer.guildId}.mp4`).toString();
-        if (fs.existsSync(filePath)) {
-            fs.rmSync(filePath);
-        }
-
-        const stream = ytdl(selectedSong.url, {
-            filter: 'audioonly',
+        // const filePath = await downloadAudio(selectedSong, serverPlayer.guildId);
+        const ytStream = await ytstream.stream(selectedSong.url, {
+            quality: 'high',
+            type: 'audio',
+            highWaterMark: 1048576 * 32,
+            download: true,
         });
-        const writeStream = fs.createWriteStream(filePath);
-        stream.pipe(writeStream);
+        const stream = ytStream.stream;
+        let errorProcessed = false;
 
-        await new Promise((resolve, reject) => {
-            const handleError = (error) => {
-                logger.error(
-                    `Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`,
-                    error
-                );
-                reject(error);
-                stream.unpipe();
-                writeStream.close();
-            };
-            writeStream.on('finish', resolve);
-            writeStream.on('error', handleError);
-            stream.on('error', handleError);
+        stream.on('error', (error) => {
+            if (errorProcessed) {
+                return;
+            }
+            errorProcessed = true;
+
+            logger.error(`Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
+            playlistEntry.reties++;
+
+            if (serverPlayer.skipToSong()) {
+                radin(serverPlayer);
+            }
         });
+        stream.on('close', () => {
+            logger.info(`Close ${serverPlayer.audioPlayer.state} ${serverPlayer.guildId}`);
+            // if (!serverPlayer.notPlayingOrPaused()) {
+            //     serverPlayer.audioPlayer.stop()
+            // }
+        });
+        stream.on('end', () => logger.info(`End ${serverPlayer.audioPlayer.state} ${serverPlayer.guildId}`));
 
         const joinOptions = {
-            channelId,
-            guildId: message.guild.id,
+            channelId: originalVoiceChannelId,
+            guildId: serverPlayer.guildId,
             adapterCreator: message.guild.voiceAdapterCreator,
         };
 
@@ -130,14 +135,13 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             );
         }
 
-        let resource = createAudioResource(filePath, {
+        let resource = createAudioResource(stream, {
             inputType: StreamType.Arbitrary,
         });
 
         serverPlayer.audioPlayer.play(resource);
         serverPlayer.playerSubscription = serverPlayer.voiceConnection.subscribe(serverPlayer.audioPlayer);
 
-        let errorProcessed = false;
         serverPlayer.audioPlayer.on('error', (error) => {
             if (errorProcessed) {
                 return;
@@ -160,7 +164,7 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
 
         return true;
     } catch (e) {
-        logger.error(`Erro ao reproduzir música "${selectedSong.title}" server ${serverPlayer.guildId}`, e);
+        logger.error(`Erro ao reproduzir música "${selectedSong.title}" server ${serverPlayer.guildId}.\n${e}`, e);
         message.channel.send(
             `Não foi possível reproduzir a música (${selectedSong.title})\n` +
                 `Provavelmente tem restrição de idade ou está privado @w@`
@@ -169,5 +173,36 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
         return false;
     }
 }
+
+// async function downloadAudio(selectedSong, guildId) {
+//     const filePath = path.resolve(__dirname, '..', '..', 'audio_cache', `${guildId}.webm`).toString();
+//     if (fs.existsSync(filePath)) {
+//         fs.rmSync(filePath);
+//     }
+
+//     const ytStream = await ytstream.stream(selectedSong.url, {
+//         quality: 'high',
+//         type: 'audio',
+//         highWaterMark: 1048576 * 32,
+//         download: true
+//     });
+//     const stream = ytStream.stream;
+//     const writeStream = fs.createWriteStream(filePath);
+//     stream.pipe(writeStream);
+
+//     await new Promise((resolve, reject) => {
+//         const handleError = (error) => {
+//             logger.error(`Erro em playstream música "${selectedSong.title}" server ${guildId}.`);
+//             reject(error);
+//             stream.unpipe();
+//             writeStream.close();
+//         };
+//         writeStream.on('finish', resolve);
+//         writeStream.on('error', handleError);
+//         stream.on('error', handleError);
+//     });
+
+//     return filePath;
+// }
 
 module.exports = radin;
