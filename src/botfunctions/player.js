@@ -1,6 +1,6 @@
 const ytstream = require('yt-stream');
-// const fs = require('fs');
-// const path = require('path');
+const fs = require('fs');
+const path = require('path');
 const {
     joinVoiceChannel,
     createAudioResource,
@@ -11,6 +11,7 @@ const {
 const ServerPlayer = require('../domain/ServerPlayer');
 const PlaylistEntry = require('../domain/PlaylistEntry');
 const logger = require('../util/logger');
+const { YouTubeVideo } = require('play-dl');
 
 /**
  *
@@ -35,6 +36,7 @@ async function radin(serverPlayer, sendMessage = true) {
     clearTimeout(serverPlayer.idleTimer);
 
     serverPlayer.audioPlayer.once(AudioPlayerStatus.Idle, (_oldState, _newState) => {
+        logger.info(`${serverPlayer.guildId} serverPlayer idle`);
         serverPlayer.idleTimer = setTimeout(() => {
             serverPlayer.voiceConnection.disconnect();
         }, 15 * 60 * 1000); // 15 minutes
@@ -86,32 +88,12 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
         const ytStream = await ytstream.stream(selectedSong.url, {
             quality: 'high',
             type: 'audio',
-            highWaterMark: 1048576 * 32,
+            highWaterMark: 256 * 1024,
             download: true,
         });
-        const stream = ytStream.stream;
-        let errorProcessed = false;
-
-        stream.on('error', (error) => {
-            if (errorProcessed) {
-                return;
-            }
-            errorProcessed = true;
-
+        ytStream.stream.on('error', (error) => {
             logger.error(`Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
-            playlistEntry.reties++;
-
-            if (serverPlayer.skipToSong()) {
-                radin(serverPlayer);
-            }
         });
-        stream.on('close', () => {
-            logger.info(`Close ${serverPlayer.audioPlayer.state} ${serverPlayer.guildId}`);
-            // if (!serverPlayer.notPlayingOrPaused()) {
-            //     serverPlayer.audioPlayer.stop()
-            // }
-        });
-        stream.on('end', () => logger.info(`End ${serverPlayer.audioPlayer.state} ${serverPlayer.guildId}`));
 
         const joinOptions = {
             channelId: originalVoiceChannelId,
@@ -135,13 +117,15 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             );
         }
 
-        let resource = createAudioResource(stream, {
+        let resource = createAudioResource(ytStream.stream, {
             inputType: StreamType.Arbitrary,
         });
 
+        serverPlayer.audioPlayer.stop();
         serverPlayer.audioPlayer.play(resource);
         serverPlayer.playerSubscription = serverPlayer.voiceConnection.subscribe(serverPlayer.audioPlayer);
 
+        let errorProcessed = false;
         serverPlayer.audioPlayer.on('error', (error) => {
             if (errorProcessed) {
                 return;
@@ -174,35 +158,41 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
     }
 }
 
-// async function downloadAudio(selectedSong, guildId) {
-//     const filePath = path.resolve(__dirname, '..', '..', 'audio_cache', `${guildId}.webm`).toString();
-//     if (fs.existsSync(filePath)) {
-//         fs.rmSync(filePath);
-//     }
+/**
+ * TODO use pipelines if going back to this strategy in the future
+ * @param {YouTubeVideo} selectedSong video to play
+ * @param {string} guildId
+ * @returns {string} download absolute path
+ */
+async function downloadAudio(selectedSong, guildId) {
+    const filePath = path.resolve(__dirname, '..', '..', 'audio_cache', `${guildId}.webm`);
+    if (fs.existsSync(filePath)) {
+        fs.rmSync(filePath);
+    }
 
-//     const ytStream = await ytstream.stream(selectedSong.url, {
-//         quality: 'high',
-//         type: 'audio',
-//         highWaterMark: 1048576 * 32,
-//         download: true
-//     });
-//     const stream = ytStream.stream;
-//     const writeStream = fs.createWriteStream(filePath);
-//     stream.pipe(writeStream);
+    const ytStream = await ytstream.stream(selectedSong.url, {
+        quality: 'high',
+        type: 'audio',
+        highWaterMark: 256 * 1024,
+        download: true
+    });
+    const stream = ytStream.stream;
+    const writeStream = fs.createWriteStream(filePath);
+    stream.pipe(writeStream);
 
-//     await new Promise((resolve, reject) => {
-//         const handleError = (error) => {
-//             logger.error(`Erro em playstream música "${selectedSong.title}" server ${guildId}.`);
-//             reject(error);
-//             stream.unpipe();
-//             writeStream.close();
-//         };
-//         writeStream.on('finish', resolve);
-//         writeStream.on('error', handleError);
-//         stream.on('error', handleError);
-//     });
+    await new Promise((resolve, reject) => {
+        const handleError = (error) => {
+            logger.error(`Erro em playstream música "${selectedSong.title}" server ${guildId}.`);
+            reject(error);
+            stream.unpipe();
+            writeStream.close();
+        };
+        stream.on('end', resolve)
+        writeStream.on('error', handleError);
+        stream.on('error', handleError);
+    });
 
-//     return filePath;
-// }
+    return filePath;
+}
 
 module.exports = radin;

@@ -7,7 +7,9 @@ const logger = require('./src/util/logger');
 const { token, prefix } = require('./src/token');
 const allCommands = require('./src/commands/allCommands');
 
-logger.info(`Starting up bot. Version: ${version}.`);
+const commandPrefix = prefix ?? '-';
+
+logger.info(`Starting up bot. Prefix: ${prefix}. Version: ${version}.`);
 
 const sophi = getClient();
 
@@ -20,8 +22,6 @@ sophi.on('ready', () => {
     sophi.user.setActivity('indie babe uwu', { type: 'LISTENING' });
     logger.info(`Logged in as ${sophi.user.tag}!`);
 });
-
-const commandPrefix = prefix ?? '-';
 
 sophi.on('messageCreate', async (message) => {
     if (message.author.bot || message.content[0] !== commandPrefix || message.content.length < 2) {

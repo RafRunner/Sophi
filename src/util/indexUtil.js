@@ -1,6 +1,6 @@
 const ServerPlayer = require('../domain/ServerPlayer');
 
-const possibleIndexString = '[-+]?\\d+|first|previous|this|next|last';
+const possibleIndexString = '[-+]?\\s*\\d+|first|previous|this|next|last';
 
 module.exports = {
     /**
