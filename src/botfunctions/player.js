@@ -51,6 +51,7 @@ async function radin(serverPlayer, sendMessage = true) {
         serverPlayer.checkPlayingToNoOne(playlistEntry.originalVoiceChannelId, playlistEntry.message);
 
         if (playlistEntry.stopRadin) {
+            playlistEntry.stopRadin = false;
             return;
         }
 

@@ -18,10 +18,6 @@ const goto = new Command(
         }
 
         const index = resolveIndex(result[1], serverPlayer);
-        if (index === serverPlayer.currentSongIndex) {
-            message.reply('Você não pode ir para o ponto atual da playlist :v');
-            return;
-        }
 
         if (serverPlayer.skipToSong(index)) {
             radin(serverPlayer);
