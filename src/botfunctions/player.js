@@ -1,4 +1,5 @@
-const ytstream = require('yt-stream');
+// const ytstream = require('yt-stream');
+const ytdl = require('ytdl-core');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -12,6 +13,7 @@ const ServerPlayer = require('../domain/ServerPlayer');
 const PlaylistEntry = require('../domain/PlaylistEntry');
 const logger = require('../util/logger');
 const { YouTubeVideo } = require('play-dl');
+const { Readable } = require('stream');
 
 /**
  *
@@ -86,13 +88,8 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
 
     try {
         // const filePath = await downloadAudio(selectedSong, serverPlayer.guildId);
-        const ytStream = await ytstream.stream(selectedSong.url, {
-            quality: 'high',
-            type: 'audio',
-            highWaterMark: 256 * 1024,
-            download: true,
-        });
-        ytStream.stream.on('error', (error) => {
+        const stream = await createStream(selectedSong.url);
+        stream.on('error', (error) => {
             logger.error(`Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
         });
 
@@ -118,7 +115,7 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             );
         }
 
-        let resource = createAudioResource(ytStream.stream, {
+        let resource = createAudioResource(stream, {
             inputType: StreamType.Arbitrary,
         });
 
@@ -171,13 +168,7 @@ async function downloadAudio(selectedSong, guildId) {
         fs.rmSync(filePath);
     }
 
-    const ytStream = await ytstream.stream(selectedSong.url, {
-        quality: 'high',
-        type: 'audio',
-        highWaterMark: 256 * 1024,
-        download: true
-    });
-    const stream = ytStream.stream;
+    const stream = await createStream(selectedSong.url);
     const writeStream = fs.createWriteStream(filePath);
     stream.pipe(writeStream);
 
@@ -194,6 +185,24 @@ async function downloadAudio(selectedSong, guildId) {
     });
 
     return filePath;
+}
+
+/**
+ * Creates a stream from url
+ * @param {string} songUrl url to stream
+ * @returns {Promise<Readable>} the stream
+ */
+async function createStream(songUrl) {
+    // const ytStream = await ytstream.stream(selectedSong.url, {
+    //     quality: 'high',
+    //     type: 'audio',
+    //     highWaterMark: 256 * 1024,
+    //     download: true
+    // });
+    // return ytStream.stream;
+    return ytdl(songUrl, {
+        filter: 'audioonly',
+    })
 }
 
 module.exports = radin;

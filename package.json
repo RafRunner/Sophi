@@ -21,7 +21,8 @@
         "spotify-web-api-node": "5.0.2",
         "winston": "^3.13.0",
         "winston-daily-rotate-file": "^5.0.0",
-        "yt-stream": "1.6.1"
+        "yt-stream": "1.6.1",
+        "ytdl-core": "^4.11.5"
     },
     "devDependencies": {
         "nodemon": "^3.1.0"
