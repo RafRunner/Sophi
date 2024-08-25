@@ -1,5 +1,5 @@
 // const ytstream = require('yt-stream');
-const ytdl = require('ytdl-core');
+const ytdl = require("@distube/ytdl-core");
 const fs = require('fs');
 const path = require('path');
 const {
@@ -87,11 +87,11 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
     const { message, ytInfo: selectedSong, originalVoiceChannelId } = playlistEntry;
 
     try {
-        // const filePath = await downloadAudio(selectedSong, serverPlayer.guildId);
-        const stream = await createStream(selectedSong.url);
-        stream.on('error', (error) => {
-            logger.error(`Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
-        });
+        const filePath = await downloadAudio(selectedSong, serverPlayer.guildId);
+        // const stream = await createStream(selectedSong.url);
+        // stream.on('error', (error) => {
+        //     logger.error(`Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
+        // });
 
         const joinOptions = {
             channelId: originalVoiceChannelId,
@@ -115,17 +115,18 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             );
         }
 
-        let resource = createAudioResource(stream, {
+        const resource = createAudioResource(filePath, {
             inputType: StreamType.Arbitrary,
         });
 
-        serverPlayer.audioPlayer.stop();
+        // serverPlayer.audioPlayer.stop();
         serverPlayer.audioPlayer.play(resource);
         serverPlayer.playerSubscription = serverPlayer.voiceConnection.subscribe(serverPlayer.audioPlayer);
 
+        const entryIndex = serverPlayer.currentSongIndex;
         let errorProcessed = false;
         serverPlayer.audioPlayer.on('error', (error) => {
-            if (errorProcessed) {
+            if (errorProcessed || entryIndex !== serverPlayer.currentSongIndex) {
                 return;
             }
             errorProcessed = true;
@@ -193,7 +194,7 @@ async function downloadAudio(selectedSong, guildId) {
  * @returns {Promise<Readable>} the stream
  */
 async function createStream(songUrl) {
-    // const ytStream = await ytstream.stream(selectedSong.url, {
+    // const ytStream = await ytstream.stream(songUrl, {
     //     quality: 'high',
     //     type: 'audio',
     //     highWaterMark: 256 * 1024,
@@ -202,6 +203,7 @@ async function createStream(songUrl) {
     // return ytStream.stream;
     return ytdl(songUrl, {
         filter: 'audioonly',
+        quality: 'highestaudio',
     })
 }
 
