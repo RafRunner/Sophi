@@ -1,4 +1,4 @@
-const ytstream = require('yt-stream');
+const youtubedl = require('youtube-dl-exec');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -85,16 +85,13 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
     const { message, ytInfo: selectedSong, originalVoiceChannelId } = playlistEntry;
 
     try {
-        // const filePath = await downloadAudio(selectedSong, serverPlayer.guildId);
-        const ytStream = await ytstream.stream(selectedSong.url, {
-            quality: 'high',
-            type: 'audio',
-            highWaterMark: 256 * 1024,
-            download: true,
-        });
-        ytStream.stream.on('error', (error) => {
-            logger.error(`Erro em playstream música "${selectedSong.title}" server ${serverPlayer.guildId}.`, error);
-        });
+        const filePath = await downloadAudio(selectedSong, serverPlayer.guildId);
+        if (!filePath) {
+            message.channel.send(
+                `Não foi possível tocar o vídeo (${selectedSong.title}). Fale com o desenvolvedor @w@`
+            );
+            return false;
+        }
 
         const joinOptions = {
             channelId: originalVoiceChannelId,
@@ -118,7 +115,7 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             );
         }
 
-        let resource = createAudioResource(ytStream.stream, {
+        let resource = createAudioResource(filePath, {
             inputType: StreamType.Arbitrary,
         });
 
@@ -160,38 +157,39 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
 }
 
 /**
- * TODO use pipelines if going back to this strategy in the future
+ *
  * @param {YouTubeVideo} selectedSong video to play
  * @param {string} guildId
- * @returns {string} download absolute path
+ * @returns {string | null} download absolute path or null in case of errors
  */
 async function downloadAudio(selectedSong, guildId) {
-    const filePath = path.resolve(__dirname, '..', '..', 'audio_cache', `${guildId}.webm`);
+    const filePath = path.resolve(__dirname, '..', '..', 'audio_cache', `${guildId}.mp3`);
     if (fs.existsSync(filePath)) {
         fs.rmSync(filePath);
     }
 
-    const ytStream = await ytstream.stream(selectedSong.url, {
-        quality: 'high',
-        type: 'audio',
-        highWaterMark: 256 * 1024,
-        download: true
+    await youtubedl(selectedSong.url, {
+        extractAudio: true,
+        audioFormat: 'mp3',
+        output: filePath,
+        noCheckCertificates: true,
+        noWarnings: true,
+        addHeader: ['referer:youtube.com', 'user-agent:googlebot'],
     });
-    const stream = ytStream.stream;
-    const writeStream = fs.createWriteStream(filePath);
-    stream.pipe(writeStream);
 
-    await new Promise((resolve, reject) => {
-        const handleError = (error) => {
-            logger.error(`Erro em playstream música "${selectedSong.title}" server ${guildId}.`);
-            reject(error);
-            stream.unpipe();
-            writeStream.close();
-        };
-        stream.on('end', resolve)
-        writeStream.on('error', handleError);
-        stream.on('error', handleError);
-    });
+    // Verify file exists and has content
+    if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        logger.info(`Download completado: ${filePath}, tamanho: ${stats.size} bytes`);
+
+        if (stats.size === 0) {
+            logger.error(`Arquivo baixado está vazio: ${filePath}`);
+            return null;
+        }
+    } else {
+        logger.error(`Arquivo não existe após download: ${filePath}`);
+        return null;
+    }
 
     return filePath;
 }
