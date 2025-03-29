@@ -12,6 +12,7 @@ const ServerPlayer = require('../domain/ServerPlayer');
 const PlaylistEntry = require('../domain/PlaylistEntry');
 const logger = require('../util/logger');
 const { YouTubeVideo } = require('play-dl');
+const { Readable } = require('stream');
 
 /**
  *
@@ -115,17 +116,18 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
             );
         }
 
-        let resource = createAudioResource(filePath, {
+        const resource = createAudioResource(filePath, {
             inputType: StreamType.Arbitrary,
         });
 
-        serverPlayer.audioPlayer.stop();
+        // serverPlayer.audioPlayer.stop();
         serverPlayer.audioPlayer.play(resource);
         serverPlayer.playerSubscription = serverPlayer.voiceConnection.subscribe(serverPlayer.audioPlayer);
 
+        const entryIndex = serverPlayer.currentSongIndex;
         let errorProcessed = false;
         serverPlayer.audioPlayer.on('error', (error) => {
-            if (errorProcessed) {
+            if (errorProcessed || entryIndex !== serverPlayer.currentSongIndex) {
                 return;
             }
             errorProcessed = true;
@@ -192,6 +194,25 @@ async function downloadAudio(selectedSong, guildId) {
     }
 
     return filePath;
+}
+
+/**
+ * Creates a stream from url
+ * @param {string} songUrl url to stream
+ * @returns {Promise<Readable>} the stream
+ */
+async function createStream(songUrl) {
+    // const ytStream = await ytstream.stream(songUrl, {
+    //     quality: 'high',
+    //     type: 'audio',
+    //     highWaterMark: 256 * 1024,
+    //     download: true
+    // });
+    // return ytStream.stream;
+    return ytdl(songUrl, {
+        filter: 'audioonly',
+        quality: 'highestaudio',
+    })
 }
 
 module.exports = radin;
