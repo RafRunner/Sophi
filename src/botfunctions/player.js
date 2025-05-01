@@ -196,23 +196,23 @@ async function downloadAudio(selectedSong, guildId) {
     return filePath;
 }
 
-/**
- * Creates a stream from url
- * @param {string} songUrl url to stream
- * @returns {Promise<Readable>} the stream
- */
-async function createStream(songUrl) {
-    // const ytStream = await ytstream.stream(songUrl, {
-    //     quality: 'high',
-    //     type: 'audio',
-    //     highWaterMark: 256 * 1024,
-    //     download: true
-    // });
-    // return ytStream.stream;
-    return ytdl(songUrl, {
-        filter: 'audioonly',
-        quality: 'highestaudio',
-    })
-}
+// /**
+//  * Creates a stream from url
+//  * @param {string} songUrl url to stream
+//  * @returns {Promise<Readable>} the stream
+//  */
+// async function createStream(songUrl) {
+//     // const ytStream = await ytstream.stream(songUrl, {
+//     //     quality: 'high',
+//     //     type: 'audio',
+//     //     highWaterMark: 256 * 1024,
+//     //     download: true
+//     // });
+//     // return ytStream.stream;
+//     return ytdl(songUrl, {
+//         filter: 'audioonly',
+//         quality: 'highestaudio',
+//     })
+// }
 
 module.exports = radin;
