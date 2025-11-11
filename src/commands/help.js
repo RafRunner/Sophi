@@ -11,7 +11,7 @@ const { EmbedBuilder } = require('discord.js');
  */
 function helpMaker(commands) {
     const helpMessage = commands
-        .filter((c) => !!c.help)
+        .filter((c) => c.help.name !== 'help' && c.help.name !== 'version')
         .map((c) => `> **${c.help.name}**: ${c.help.helpText}. **Alias**: ${c.help.aliases}.`)
         .join('\n\n');
 
@@ -35,7 +35,7 @@ function helpMaker(commands) {
             });
         },
 
-        null,
+        new CommandHelp('help', 'h', 'mostra os comandos disponíveis'),
         false
     );
 }

@@ -12,7 +12,7 @@ const ServerPlayer = require('../domain/ServerPlayer');
 const PlaylistEntry = require('../domain/PlaylistEntry');
 const logger = require('../util/logger');
 const { YouTubeVideo } = require('play-dl');
-const { Readable } = require('stream');
+// const { Readable } = require('stream');
 
 /**
  *
@@ -142,7 +142,7 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
         });
 
         logger.info(
-            `Tocando '${selectedSong.title}' (${selectedSong.durationRaw}) a pedido de '${message.author.username}'` +
+            `Tocando '${selectedSong.title}' (${selectedSong.durationRaw}) (${selectedSong.url}) a pedido de '${message.author.username}'` +
                 `(${message.author.id}) no servidor '${message.guild.name}'(${serverPlayer.guildId})`
         );
 

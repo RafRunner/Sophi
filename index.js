@@ -3,13 +3,14 @@ const ServerPlayer = require('./src/domain/ServerPlayer');
 const SophiError = require('./src/domain/SophiError');
 const version = require('./package.json').version;
 const logger = require('./src/util/logger');
+const database = require('./src/util/database');
 
 const { token, prefix } = require('./src/token');
 const allCommands = require('./src/commands/allCommands');
 
 const commandPrefix = prefix ?? '-';
 
-logger.info(`Starting up bot. Prefix: ${prefix}. Version: ${version}.`);
+logger.info(`Starting up bot. Prefix: ${commandPrefix}. Version: ${version}.`);
 
 const sophi = getClient();
 
@@ -18,9 +19,14 @@ const sophi = getClient();
  */
 const serverPlayers = new Map();
 
-sophi.on('ready', () => {
+sophi.on('ready', async () => {
     sophi.user.setActivity('indie babe uwu', { type: 'LISTENING' });
     logger.info(`Logged in as ${sophi.user.tag}!`);
+    try {
+        await database.initialize();
+    } catch (error) {
+        logger.error('Erro ao inicializar banco de dados:', error);
+    }
 });
 
 sophi.on('messageCreate', async (message) => {
@@ -55,7 +61,18 @@ sophi.on('messageCreate', async (message) => {
                 `Novo servidor: '${message.guild.name}'(${guildId}), total: ${serverPlayers.size}.` +
                     ` Dono: '${owner.user.username}'(${owner.id})`
             );
+            // Ensure server exists in database
+            await database.ensureServer(guildId, message.guild.name, owner.id);
+            // Ensure owner user exists in database
+            await database.ensureUser(owner.id, owner.user.username, owner.user.tag);
         }
+
+        // Ensure user exists in database
+        await database.ensureUser(
+            message.author.id,
+            message.author.username,
+            message.author.tag
+        );
 
         const serverPlayer = serverPlayers.get(guildId);
 
@@ -66,12 +83,36 @@ sophi.on('messageCreate', async (message) => {
             try {
                 logger.info(`Executando comando ${commandoUserServer}`);
                 await command.execute(message, argument, serverPlayer);
+                // Log successful command execution
+                await database.logCommand(
+                    guildId,
+                    message.author.id,
+                    command.help.name,
+                    argument,
+                    true
+                );
             } catch (e) {
+                const errorAt = new Date();
+                let errorMessage = null;
+
                 if (e instanceof SophiError) {
                     message.reply(e.message);
+                    errorMessage = e.message;
                 } else {
                     logger.error(`Erro ao processar a mensagem: "${commandoUserServer}`, e);
+                    errorMessage = 'Erro desconhecido: ' + e.message;
                 }
+
+                // Log failed command execution
+                await database.logCommand(
+                    guildId,
+                    message.author.id,
+                    command.help.name,
+                    argument,
+                    false,
+                    errorMessage,
+                    errorAt
+                );
             }
         });
 

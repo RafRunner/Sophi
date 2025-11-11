@@ -1,5 +1,6 @@
 const version = require('../../package.json').version;
 const Command = require('../domain/Command');
+const CommandHelp = require('../domain/CommandHelp');
 const { messageIsCommand } = require('../util/commandUtil');
 
 const versionCommand = new Command(
@@ -11,7 +12,7 @@ const versionCommand = new Command(
         message.reply(`Versão ${version}`);
     },
 
-    null,
+    new CommandHelp('version', 'v', 'mostra a versão do bot'),
     false
 );
 

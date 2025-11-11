@@ -15,7 +15,7 @@ class Command {
      *
      * @param {(message: Message, normalizedMessage: string) => [boolean, string]} shouldExecute
      * @param {(message: Message, argument: string, serverPlayer: ServerPlayer) => Promise<void>} execute
-     * @param {CommandHelp?} help
+     * @param {CommandHelp} help
      * @param {boolean} requireInVoice
      */
     constructor(shouldExecute, execute, help, requireInVoice = true) {
@@ -30,7 +30,7 @@ class Command {
         this.execute = execute;
 
         /**
-         * @type {CommandHelp?}
+         * @type {CommandHelp}
          */
         this.help = help;
 

@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Server {
+  id         String   @id
+  name       String
+  ownerId    String
+  firstSeenAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  commandExecutions CommandExecution[]
+  
+  @@map("servers")
+}
+
+model User {
+  id         String   @id
+  username   String
+  tag        String
+  firstSeenAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  commandExecutions CommandExecution[]
+  
+  @@map("users")
+}
+
+model CommandExecution {
+  id          Int      @id @default(autoincrement())
+  serverId    String
+  userId      String
+  commandName String
+  arguments   String?
+  executedAt  DateTime @default(now())
+  success     Boolean
+  errorMessage String?
+  errorAt     DateTime?
+  
+  server Server @relation(fields: [serverId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  
+  @@map("command_executions")
+}
+
