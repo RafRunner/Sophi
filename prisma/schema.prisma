@@ -18,6 +18,7 @@ model Server {
   updatedAt  DateTime @updatedAt
   
   commandExecutions CommandExecution[]
+  playedEntries     PlayedEntry[]
   
   @@map("servers")
 }
@@ -30,6 +31,7 @@ model User {
   updatedAt  DateTime @updatedAt
   
   commandExecutions CommandExecution[]
+  playedEntries     PlayedEntry[]
   
   @@map("users")
 }
@@ -49,5 +51,24 @@ model CommandExecution {
   user   User   @relation(fields: [userId], references: [id])
   
   @@map("command_executions")
+}
+
+model PlayedEntry {
+  id               Int      @id @default(autoincrement())
+  serverId         String
+  userId           String
+  youtubeUrl       String
+  title            String
+  channelName      String?
+  durationRaw      String?
+  durationInSeconds Int?
+  requestedAt      DateTime @default(now())
+  playedAt         DateTime @default(now())
+  playedInFull     Boolean  @default(false)
+  
+  server Server @relation(fields: [serverId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  
+  @@map("played_entries")
 }
 

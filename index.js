@@ -4,6 +4,9 @@ const SophiError = require('./src/domain/SophiError');
 const version = require('./package.json').version;
 const logger = require('./src/util/logger');
 const database = require('./src/util/database');
+const serverRepository = require('./src/repositories/serverRepository');
+const userRepository = require('./src/repositories/userRepository');
+const commandExecutionRepository = require('./src/repositories/commandExecutionRepository');
 
 const { token, prefix } = require('./src/token');
 const allCommands = require('./src/commands/allCommands');
@@ -62,13 +65,13 @@ sophi.on('messageCreate', async (message) => {
                     ` Dono: '${owner.user.username}'(${owner.id})`
             );
             // Ensure server exists in database
-            await database.ensureServer(guildId, message.guild.name, owner.id);
+            await serverRepository.ensureServer(guildId, message.guild.name, owner.id);
             // Ensure owner user exists in database
-            await database.ensureUser(owner.id, owner.user.username, owner.user.tag);
+            await userRepository.ensureUser(owner.id, owner.user.username, owner.user.tag);
         }
 
         // Ensure user exists in database
-        await database.ensureUser(
+        await userRepository.ensureUser(
             message.author.id,
             message.author.username,
             message.author.tag
@@ -84,7 +87,7 @@ sophi.on('messageCreate', async (message) => {
                 logger.info(`Executando comando ${commandoUserServer}`);
                 await command.execute(message, argument, serverPlayer);
                 // Log successful command execution
-                await database.logCommand(
+                await commandExecutionRepository.logCommand(
                     guildId,
                     message.author.id,
                     command.help.name,
@@ -104,7 +107,7 @@ sophi.on('messageCreate', async (message) => {
                 }
 
                 // Log failed command execution
-                await database.logCommand(
+                await commandExecutionRepository.logCommand(
                     guildId,
                     message.author.id,
                     command.help.name,

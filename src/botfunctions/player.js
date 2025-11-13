@@ -12,6 +12,7 @@ const ServerPlayer = require('../domain/ServerPlayer');
 const PlaylistEntry = require('../domain/PlaylistEntry');
 const logger = require('../util/logger');
 const { YouTubeVideo } = require('play-dl');
+const playedEntryRepository = require('../repositories/playedEntryRepository');
 // const { Readable } = require('stream');
 
 /**
@@ -36,8 +37,30 @@ async function radin(serverPlayer, sendMessage = true) {
 
     clearTimeout(serverPlayer.idleTimer);
 
-    serverPlayer.audioPlayer.once(AudioPlayerStatus.Idle, (_oldState, _newState) => {
+    serverPlayer.audioPlayer.once(AudioPlayerStatus.Idle, async (_oldState, _newState) => {
         logger.info(`${serverPlayer.guildId} serverPlayer idle`);
+        
+        // Determine if song was played in full (not skipped)
+        const playedInFull = !playlistEntry.stopRadin;
+        
+        // Log the played entry to database
+        try {
+            await playedEntryRepository.logPlayedEntry(
+                serverPlayer.guildId,
+                playlistEntry.message.author.id,
+                playlistEntry.ytInfo.url,
+                playlistEntry.ytInfo.title,
+                playlistEntry.ytInfo.channel?.name || null,
+                playlistEntry.ytInfo.durationRaw || null,
+                playlistEntry.ytInfo.durationInSec || null,
+                new Date(playlistEntry.message.createdTimestamp),
+                new Date(),
+                playedInFull
+            );
+        } catch (error) {
+            logger.error(`Erro ao registrar entrada tocada: ${playlistEntry.ytInfo.title}`, error);
+        }
+
         serverPlayer.idleTimer = setTimeout(() => {
             serverPlayer.voiceConnection.disconnect();
         }, 15 * 60 * 1000); // 15 minutes
