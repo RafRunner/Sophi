@@ -32,6 +32,11 @@ class PlaylistEntry {
          * @type {number}
          */
         this.reties = 0;
+
+        /**
+         * @type {number | null}
+         */
+        this.playedEntryId = null;
     }
 }
 

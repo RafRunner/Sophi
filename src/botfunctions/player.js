@@ -39,26 +39,13 @@ async function radin(serverPlayer, sendMessage = true) {
 
     serverPlayer.audioPlayer.once(AudioPlayerStatus.Idle, async (_oldState, _newState) => {
         logger.info(`${serverPlayer.guildId} serverPlayer idle`);
-        
+
         // Determine if song was played in full (not skipped)
         const playedInFull = !playlistEntry.stopRadin;
-        
-        // Log the played entry to database
-        try {
-            await playedEntryRepository.logPlayedEntry(
-                serverPlayer.guildId,
-                playlistEntry.message.author.id,
-                playlistEntry.ytInfo.url,
-                playlistEntry.ytInfo.title,
-                playlistEntry.ytInfo.channel?.name || null,
-                playlistEntry.ytInfo.durationRaw || null,
-                playlistEntry.ytInfo.durationInSec || null,
-                new Date(playlistEntry.message.createdTimestamp),
-                new Date(),
-                playedInFull
-            );
-        } catch (error) {
-            logger.error(`Erro ao registrar entrada tocada: ${playlistEntry.ytInfo.title}`, error);
+
+        // Update the played entry in database
+        if (playlistEntry.playedEntryId) {
+            await playedEntryRepository.updatePlayedEntry(playlistEntry.playedEntryId, new Date(), playedInFull);
         }
 
         serverPlayer.idleTimer = setTimeout(() => {
@@ -147,6 +134,19 @@ async function playReq(serverPlayer, playlistEntry, sendMessage) {
         serverPlayer.audioPlayer.play(resource);
         serverPlayer.playerSubscription = serverPlayer.voiceConnection.subscribe(serverPlayer.audioPlayer);
 
+        // Create played entry when playback starts
+        const entryId = await playedEntryRepository.createPlayedEntry(
+            serverPlayer.guildId,
+            message.author.id,
+            selectedSong.url,
+            selectedSong.title,
+            selectedSong.channel?.name || null,
+            selectedSong.durationRaw || null,
+            selectedSong.durationInSec || null,
+            new Date(message.createdTimestamp)
+        );
+        playlistEntry.playedEntryId = entryId;
+
         const entryIndex = serverPlayer.currentSongIndex;
         let errorProcessed = false;
         serverPlayer.audioPlayer.on('error', (error) => {
@@ -193,6 +193,7 @@ async function downloadAudio(selectedSong, guildId) {
         fs.rmSync(filePath);
     }
 
+    logger.info(`Baixando audio de ${selectedSong.url}`);
     await youtubedl(selectedSong.url, {
         extractAudio: true,
         audioFormat: 'mp3',

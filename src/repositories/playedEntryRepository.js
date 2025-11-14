@@ -6,7 +6,7 @@ const logger = require('../util/logger');
  */
 class PlayedEntryRepository {
     /**
-     * Log a played entry to the database
+     * Create a played entry when playback starts
      * @param {string} serverId - Discord guild ID
      * @param {string} userId - Discord user ID who requested the song
      * @param {string} youtubeUrl - YouTube video URL
@@ -15,11 +15,9 @@ class PlayedEntryRepository {
      * @param {string?} durationRaw - Duration as raw string (e.g., "3:45")
      * @param {number?} durationInSeconds - Duration in seconds
      * @param {Date?} requestedAt - When the song was requested
-     * @param {Date?} playedAt - When the song finished playing
-     * @param {boolean} playedInFull - Whether the song played to completion
-     * @returns {Promise<void>}
+     * @returns {Promise<number | null>} The created entry ID, or null on error
      */
-    async logPlayedEntry(
+    async createPlayedEntry(
         serverId,
         userId,
         youtubeUrl,
@@ -27,12 +25,10 @@ class PlayedEntryRepository {
         channelName = null,
         durationRaw = null,
         durationInSeconds = null,
-        requestedAt = null,
-        playedAt = null,
-        playedInFull = false
+        requestedAt = null
     ) {
         try {
-            await prisma.playedEntry.create({
+            const entry = await prisma.playedEntry.create({
                 data: {
                     serverId: serverId,
                     userId: userId,
@@ -42,15 +38,37 @@ class PlayedEntryRepository {
                     durationRaw: durationRaw,
                     durationInSeconds: durationInSeconds,
                     requestedAt: requestedAt || new Date(),
+                    playedAt: new Date(), // Will be updated when playback finishes
+                    playedInFull: false, // Will be updated when playback finishes
+                },
+            });
+            return entry.id;
+        } catch (error) {
+            logger.error(`Erro ao criar entrada tocada no banco: ${title}`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Update a played entry when playback finishes or gets skipped
+     * @param {number} entryId - The entry ID to update
+     * @param {Date?} playedAt - When the song finished playing
+     * @param {boolean} playedInFull - Whether the song played to completion
+     * @returns {Promise<void>}
+     */
+    async updatePlayedEntry(entryId, playedAt = null, playedInFull = false) {
+        try {
+            await prisma.playedEntry.update({
+                where: { id: entryId },
+                data: {
                     playedAt: playedAt || new Date(),
                     playedInFull: playedInFull,
                 },
             });
         } catch (error) {
-            logger.error(`Erro ao registrar entrada tocada no banco: ${title}`, error);
+            logger.error(`Erro ao atualizar entrada tocada no banco: ID ${entryId}`, error);
         }
     }
 }
 
 module.exports = new PlayedEntryRepository();
-
